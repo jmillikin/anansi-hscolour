@@ -15,7 +15,7 @@
 -- You should have received a copy of the GNU General Public License
 -- along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-module Anansi.HsColour.HTML (loomHTML) where
+module Anansi.HsColour.LaTeX (loomLaTeX) where
 
 import           Control.Monad (forM_)
 import           Control.Monad.Reader (asks)
@@ -27,55 +27,55 @@ import qualified Data.Text
 import           Data.Text (Text)
 import           Data.Text.Encoding (encodeUtf8)
 
-import           Anansi hiding (loomHTML)
+import           Anansi hiding (loomLaTeX)
 import qualified Language.Haskell.HsColour as HsColour
 import           Language.Haskell.HsColour.Colourise (defaultColourPrefs)
 
-loomHTML :: Loom
-loomHTML = mapM_ putBlock . documentBlocks where
+loomLaTeX :: Loom
+loomLaTeX = mapM_ putBlock . documentBlocks where
 	putBlock b = case b of
 		BlockText text -> tell (encodeUtf8 text)
 		BlockFile path content -> do
 			epath <- escape path
-			let label = mconcat ["<b>&#xBB; ", epath, "</b>"]
+			let label = mconcat ["{\\bf\\(\\gg\\) ", epath, "}\n"]
 			putContent label content
 		BlockDefine name content -> do
 			ename <- escape name
-			let label = mconcat ["<b>&#xAB;", ename, "&#xBB;</b>"]
+			let label = mconcat ["{\\bf\\(\\ll\\) ", ename, "\\(\\gg\\)}\n"]
 			putContent label content
 	
 	putContent label cs = do
-		tell "<pre>"
+		tell "\\begin{quotation}\n"
+		tell "\\noindent{}"
 		tell label
-		tell "\n"
+		tell "\n\n"
 		forM_ cs $ \c -> case c of
 			ContentText _ text -> do
 				expanded <- expandTabs text
+				tell "\\noindent{}"
 				tell (colorize (expanded `mappend` "\n"))
-			ContentMacro _ indent name -> formatMacro indent name >>= tell
-		tell "</pre>"
+			ContentMacro _ indent name -> do
+				tell "\\noindent{}"
+				formatMacro indent name >>= tell
+		tell "\n"
+		tell "\\end{quotation}\n"
+	
+	formatMacro indent name = do
+		escIndent <- escape indent
+		escName <- escape name
+		return (mconcat [escIndent, "$|$\\emph{", escName, "}$|$\n"])
 
-formatMacro :: Text -> Text -> LoomM ByteString
-formatMacro indent name = do
-	ename <- escape name
-	return $ mconcat
-		[ encodeUtf8 indent
-		, "<i>&#xAB;"
-		, ename
-		, "&#xBB;</i>\n"
-		]
-
-escape :: Text -> LoomM ByteString
-escape txt = do
+escape ::  Text -> LoomM ByteString
+escape text = do
 	tabSize <- asks loomOptionTabSize
+	
 	return $ encodeUtf8 $ Data.Text.concatMap (\c -> case c of
 		'\t' -> Data.Text.replicate (fromInteger tabSize) " "
-		'&' -> "&amp;"
-		'<' -> "&lt;"
-		'>' -> "&gt;"
-		'"' -> "&quot;"
-		'\'' -> "&apos;"
-		_ -> Data.Text.singleton c) txt
+		'\\' -> "\\textbackslash{}"
+		'{' -> "\\{"
+		'}' -> "\\}"
+		'_' -> "\\_"
+		_ -> Data.Text.singleton c) text
 
 expandTabs :: Text -> LoomM Text
 expandTabs txt = do
@@ -86,11 +86,6 @@ expandTabs txt = do
 
 colorize :: Text -> ByteString
 colorize = ByteString.pack
-         . dropPre
-         . HsColour.hscolour HsColour.HTML defaultColourPrefs False True "" False
+         . HsColour.hscolour HsColour.LaTeX defaultColourPrefs False True "" False
          . ByteString.unpack
          . encodeUtf8
-
- -- "<pre>foo</pre>" -> "foo"
-dropPre :: String -> String
-dropPre = drop 5 . reverse . drop 6 . reverse

@@ -40,3 +40,4 @@ library
 
   other-modules:
     Anansi.HsColour.HTML
+    Anansi.HsColour.LaTeX

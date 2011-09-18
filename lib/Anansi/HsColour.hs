@@ -17,6 +17,7 @@
 
 module Anansi.HsColour
 	( loomHTML
+	, loomLaTeX
 	, looms
 	) where
 
@@ -26,8 +27,10 @@ import           Data.Text (Text)
 import qualified Anansi
 
 import           Anansi.HsColour.HTML (loomHTML)
+import           Anansi.HsColour.LaTeX (loomLaTeX)
 
 looms :: Data.Map.Map Text Anansi.Loom
 looms = Data.Map.fromList
 	[ ("anansi-hscolour.html", loomHTML)
+	, ("anansi-hscolour.latex", loomLaTeX)
 	]
