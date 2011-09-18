@@ -29,6 +29,16 @@ import qualified Anansi
 import           Anansi.HsColour.HTML (loomHTML)
 import           Anansi.HsColour.LaTeX (loomLaTeX)
 
+-- | Looms which use HsColour to produce colorized code blocks.
+--
+-- Use this with 'Anansi.defaultMain':
+--
+-- > #!/usr/bin/env runhaskell
+-- > import Anansi
+-- > import Anansi.HsColour
+-- > import Data.Map
+-- >
+-- > main = defaultMain (unions [Anansi.looms, Anansi.HsColour.looms])
 looms :: Data.Map.Map Text Anansi.Loom
 looms = Data.Map.fromList
 	[ ("anansi-hscolour.html", loomHTML)
